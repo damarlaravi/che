@@ -30,6 +30,7 @@ import org.eclipse.che.ide.ext.java.shared.dto.refactoring.ChangeInfo;
 import org.eclipse.che.ide.part.editor.multipart.EditorMultiPartStackPresenter;
 import org.eclipse.che.ide.resource.Path;
 import org.eclipse.che.ide.resources.reveal.RevealResourceEvent;
+import org.eclipse.che.ide.util.loging.Log;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -132,11 +133,13 @@ public class RefactoringUpdater {
                 @Override
                 public void apply(final ResourceDelta[] appliedDeltas) throws OperationException {
                     for (ResourceDelta delta : appliedDeltas) {
+                        Log.error(getClass(), "-- fire RevealResourceEvent " + delta.getToPath());
                         eventBus.fireEvent(new RevealResourceEvent(delta.getToPath()));
                     }
                     for (EditorPartPresenter editorPartPresenter : editorAgent.getOpenedEditors()) {
                         final String path = editorPartPresenter.getEditorInput().getFile().getLocation().toString();
                         if (pathChanged.contains(path)) {
+                            Log.error(getClass(), "-- fire FileContentUpdateEvent 111 " + editorPartPresenter.getEditorInput().getFile().getLocation().toString());
                             eventBus.fireEvent(
                                     new FileContentUpdateEvent(editorPartPresenter.getEditorInput().getFile().getLocation().toString()));
                         }
@@ -149,6 +152,7 @@ public class RefactoringUpdater {
                 @Override
                 public void execute() {
                     for (EditorPartPresenter editorPartPresenter : editorAgent.getOpenedEditors()) {
+                        Log.error(getClass(), "-- fire FileContentUpdateEvent 222 " + editorPartPresenter.getEditorInput().getFile().getLocation().toString());
                         eventBus.fireEvent(
                                 new FileContentUpdateEvent(editorPartPresenter.getEditorInput().getFile().getLocation().toString()));
                     }

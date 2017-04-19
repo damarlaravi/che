@@ -11,11 +11,9 @@
 package org.eclipse.che.ide.api.editor.reconciler;
 
 import com.google.gwt.user.client.Timer;
-import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.assistedinject.AssistedInject;
 
-import org.eclipse.che.ide.api.editor.EditorInput;
 import org.eclipse.che.ide.api.editor.document.Document;
 import org.eclipse.che.ide.api.editor.document.DocumentHandle;
 import org.eclipse.che.ide.api.editor.events.DocumentChangeEvent;
@@ -24,7 +22,6 @@ import org.eclipse.che.ide.api.editor.text.Region;
 import org.eclipse.che.ide.api.editor.text.RegionImpl;
 import org.eclipse.che.ide.api.editor.text.TypedRegion;
 import org.eclipse.che.ide.api.editor.texteditor.TextEditor;
-import org.eclipse.che.ide.api.resources.File;
 import org.eclipse.che.ide.util.loging.Log;
 
 import java.util.HashMap;
@@ -33,14 +30,10 @@ import java.util.Map;
 
 /**
  * Default implementation of {@link Reconciler}.
- * Also this implementation provide autosave function.
- * Autosave will performed before 'reconcile'.
+ *
+ * @author Roman Nikitenko
  */
-/*
-   Maybe this class not proper place for autosave function, but for this issue: https://jira.codenvycorp.com/browse/IDEX-2099
-   we need to save file content before 'reconcile'.
- */
-public class ReconcilerWithAutoSave implements Reconciler {
+public class DefaultReconciler implements Reconciler {
 
     private static final int DELAY = 2000;
 
@@ -53,20 +46,19 @@ public class ReconcilerWithAutoSave implements Reconciler {
     private DirtyRegionQueue dirtyRegionQueue;
     private DocumentHandle   documentHandle;
     private TextEditor       editor;
-    private       boolean autoSaveEnabled = true;
-    private final Timer   autoSaveTimer   = new Timer() {
+    private final Timer reconcileOperationTimer = new Timer() {
 
         @Override
         public void run() {
-            Log.error(getClass(), "before save " + ReconcilerWithAutoSave.this.hashCode());
-//            save();
+//            Log.error(getClass(), "before save " + DefaultReconciler.this.hashCode());
+//            processNextRegion();
         }
     };
 
     @AssistedInject
-    public ReconcilerWithAutoSave(@Assisted final String partition,
-                                  @Assisted final DocumentPartitioner partitioner) {
-        Log.error(getClass(), "********************************** ReconcilerWithAutoSave CONSTRUCTOR " + this.hashCode());
+    public DefaultReconciler(@Assisted final String partition,
+                             @Assisted final DocumentPartitioner partitioner) {
+//        Log.error(getClass(), "********************************** CONSTRUCTOR " + this.hashCode());
         this.partition = partition;
         strategies = new HashMap<>();
         this.partitioner = partitioner;
@@ -78,8 +70,8 @@ public class ReconcilerWithAutoSave implements Reconciler {
             reconcilingStrategy.setDocument(documentHandle.getDocument());
         }
 
-        autoSaveTimer.cancel();
-        autoSaveTimer.schedule(DELAY);
+        reconcileOperationTimer.cancel();
+        reconcileOperationTimer.schedule(DELAY);
     }
 
     @Override
@@ -92,33 +84,9 @@ public class ReconcilerWithAutoSave implements Reconciler {
 
     @Override
     public void uninstall() {
-        autoSaveTimer.cancel();
+        reconcileOperationTimer.cancel();
         for (ReconcilingStrategy strategy : strategies.values()) {
             strategy.closeReconciler();
-        }
-    }
-
-    private void save() {
-        if (autoSaveEnabled && editor.isDirty()) {
-//            dirtyRegionQueue.purgeQueue();
-            Log.error(getClass(), "1111 save autoSaveEnabled && editor.isDirty()" + ((File)editor.getEditorInput().getFile()).getModificationStamp());
-
-            editor.doSave(new AsyncCallback<EditorInput>() {
-                @Override
-                public void onFailure(Throwable throwable) {
-                    Log.error(ReconcilerWithAutoSave.class, throwable);
-                }
-
-                @Override
-                public void onSuccess(EditorInput editorInput) {
-                    Log.error(getClass(), "1111 save  onSuccess");
-                    processNextRegion();
-
-                }
-            });
-        } else {
-            Log.error(getClass(), "222 ELSE save autoSaveEnabled && editor.isDirty()");
-            processNextRegion();
         }
     }
 
@@ -150,7 +118,7 @@ public class ReconcilerWithAutoSave implements Reconciler {
 
 //        Log.error(getClass(), "/////document length " + getDocument().getContents().length());
         if (region == null) {
-            Log.error(getClass(), "*********** region == null");
+//            Log.error(getClass(), "*********** region == null");
             region = new RegionImpl(0, getDocument().getContents().length());
         }
 
@@ -202,7 +170,7 @@ public class ReconcilerWithAutoSave implements Reconciler {
 //        Log.error(getClass(), "-------------------- type length " + event.getLength());
 //        Log.error(getClass(), "-------------------- type RemoveCharCount " + event.getRemoveCharCount());
         if (event.getRemoveCharCount() == 0 && event.getText() != null && !event.getText().isEmpty()) {
-            Log.error(getClass(), "**** INSERT ");
+//            Log.error(getClass(), "**** INSERT ");
             // Insert
             dirtyRegionQueue.addDirtyRegion(new DirtyRegion(event.getOffset(),
                                                             event.getLength(),
@@ -210,7 +178,7 @@ public class ReconcilerWithAutoSave implements Reconciler {
                                                             event.getText()));
 
         } else if (event.getText() == null || event.getText().isEmpty()) {
-            Log.error(getClass(), "**** REMOVE ");
+//            Log.error(getClass(), "**** REMOVE ");
             // Remove
             dirtyRegionQueue.addDirtyRegion(new DirtyRegion(event.getOffset(),
                                                             event.getRemoveCharCount(),
@@ -218,7 +186,7 @@ public class ReconcilerWithAutoSave implements Reconciler {
                                                             null));
 
         } else {
-            Log.error(getClass(), "**** REMOVE + INSERT ");
+//            Log.error(getClass(), "**** REMOVE + INSERT ");
             // Replace (Remove + Insert)
             dirtyRegionQueue.addDirtyRegion(new DirtyRegion(event.getOffset(),
                                                             event.getRemoveCharCount(),
@@ -248,14 +216,14 @@ public class ReconcilerWithAutoSave implements Reconciler {
 
     @Override
     public void onDocumentChange(final DocumentChangeEvent event) {
-        Log.error(getClass(), "onDocumentChange " + this.hashCode());
-//        if (documentHandle == null || !documentHandle.isSameAs(event.getDocument())) {
+//        Log.error(getClass(), "onDocumentChange " + this.hashCode());
+        if (documentHandle == null || !documentHandle.isSameAs(event.getDocument())) {
 //            Log.error(getClass(), "onDocumentChange RETURN ");
-//            return;
-//        }
-//        createDirtyRegion(event);
-//        autoSaveTimer.cancel();
-//        autoSaveTimer.schedule(DELAY);
+            return;
+        }
+        createDirtyRegion(event);
+        reconcileOperationTimer.cancel();
+        reconcileOperationTimer.schedule(DELAY);
     }
 
     @Override
@@ -266,21 +234,5 @@ public class ReconcilerWithAutoSave implements Reconciler {
     @Override
     public void setDocumentHandle(final DocumentHandle handle) {
         this.documentHandle = handle;
-    }
-
-    public boolean isAutoSaveEnabled() {
-        return autoSaveEnabled;
-    }
-
-    public void disableAutoSave() {
-        autoSaveEnabled = false;
-        Log.error(getClass(), "/// disableAutoSave " + autoSaveEnabled);
-        autoSaveTimer.cancel();
-    }
-
-    public void enableAutoSave() {
-        autoSaveEnabled = true;
-        Log.error(getClass(), "/// enableAutoSave " + autoSaveEnabled);
-        autoSaveTimer.schedule(DELAY);
     }
 }

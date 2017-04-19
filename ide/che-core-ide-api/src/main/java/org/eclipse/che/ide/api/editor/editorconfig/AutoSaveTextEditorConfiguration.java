@@ -13,17 +13,19 @@ package org.eclipse.che.ide.api.editor.editorconfig;
 import org.eclipse.che.ide.api.editor.partition.DocumentPartitioner;
 import org.eclipse.che.ide.api.editor.reconciler.Reconciler;
 import org.eclipse.che.ide.api.editor.reconciler.ReconcilerWithAutoSave;
+import org.eclipse.che.ide.util.loging.Log;
 
 /**
  * @author Evgen Vidolob
  */
-public class AutoSaveTextEditorConfiguration extends DefaultTextEditorConfiguration{
+public class AutoSaveTextEditorConfiguration extends DefaultTextEditorConfiguration {
 
     private ReconcilerWithAutoSave reconcilerWithAutoSave =
             new ReconcilerWithAutoSave(DocumentPartitioner.DEFAULT_CONTENT_TYPE, getPartitioner());
 
     @Override
     public Reconciler getReconciler() {
+        Log.error(getClass(), "-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         return reconcilerWithAutoSave;
     }
 }

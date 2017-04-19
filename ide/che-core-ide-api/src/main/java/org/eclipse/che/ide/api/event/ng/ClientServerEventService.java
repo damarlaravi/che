@@ -47,6 +47,7 @@ public class ClientServerEventService {
     }
 
     private void transmit(String path, String oldPath, FileTrackingOperationDto.Type type) {
+        Log.error(getClass(), "77777 path " + path + " /// " + oldPath + " /// " + type);
         final String endpointId = "ws-agent";
         final String method = "track:editor-file";
         final FileTrackingOperationDto dto = dtoFactory.createDto(FileTrackingOperationDto.class)
