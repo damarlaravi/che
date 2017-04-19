@@ -268,7 +268,7 @@ export class WorkspaceDetailsController {
    */
   getWorkspaceStatus(): string {
     if (this.isCreationFlow) {
-      return 'CREATING';
+      return 'New';
     }
 
     let unknownStatus = 'unknown';
@@ -657,7 +657,7 @@ export class WorkspaceDetailsController {
 
     return tabs.some((tabIndex: number) => {
       return this.checkFormsNotValid(tabIndex);
-    });
+    }) || this.isDisableWorkspaceCreation();
   }
 
   /**
@@ -687,5 +687,41 @@ export class WorkspaceDetailsController {
     }
   }
 
+  /**
+   * Returns namespaces empty message if set.
+   *
+   * @returns {string}
+   */
+  getNamespaceEmptyMessage(): string {
+    return this.cheNamespaceRegistry.getEmptyMessage();
+  }
+
+  /**
+   * Returns namespaces caption.
+   *
+   * @returns {string}
+   */
+  getNamespaceCaption(): string {
+    return this.cheNamespaceRegistry.getCaption();
+  }
+
+  /**
+   * Returns namespaces additional information.
+   *
+   * @returns {()=>Function}
+   */
+  getNamespaceAdditionalInfo(): Function {
+    return this.cheNamespaceRegistry.getAdditionalInfo;
+  }
+
+  /**
+   * Returns whether workspace creation should be disabled based on namespaces.
+   *
+   * @returns {boolean|string}
+   */
+  isDisableWorkspaceCreation(): boolean {
+    let namespaces = this.cheNamespaceRegistry.getNamespaces();
+    return this.isCreationFlow && (!namespaces || namespaces.length === 0) && this.cheNamespaceRegistry.getEmptyMessage();
+  }
 }
 
